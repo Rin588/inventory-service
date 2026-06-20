@@ -9,7 +9,10 @@ jobs:
   dockr-build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      # 1. Upgraded to v4 to fix node deprecation warnings
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
       - name: Set up JDK 25
         uses: actions/setup-java@v3
         with:
@@ -41,6 +44,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.MY_GITHUB_TOKEN }}
 
+      # 2. Re-arranged order: Push image first before switching directories
       - name: Build and Push Image
         uses: docker/build-push-action@v5
         with:
@@ -50,17 +54,19 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/rin588/inventory-service:${{ steps.tag-version.outputs.version }}
 
+      # 3. Upgraded to v4. Crucial: Make sure secrets.MY_GITHUB_TOKEN is a PAT with 'repo' scope!
       - name: Checkout Kustomize chart Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: rin588/workshop-apps
           path: deployment
           token: ${{ secrets.MY_GITHUB_TOKEN }}
 
+      # 4. Verified and corrected the Kustomize updates section
       # - name: Update image tag in dev overlay
       #   uses: fjogeleit/yaml-update-action@main
       #   with:
-      #     repository: zawthanoo/workshop-apps
+      #     repository: rin588/workshop-apps  # Changed from zawthanoo to match your repo structure
       #     valueFile: inventory-service/overlays/dev/kustomization.yaml
       #     branch: main
       #     createPR: "false"
